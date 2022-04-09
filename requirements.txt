@@ -1,0 +1,5 @@
+setuptools~=57.0.0
+dask~=2022.4.0
+matplotlib~=3.5.1
+tabulate~=0.8.9
+networkx~=2.7.1
