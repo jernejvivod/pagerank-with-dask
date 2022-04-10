@@ -20,7 +20,7 @@ def plot_top_pr_scores(pr_scores, plot_path, n_top=7):
 
     node_names, pr_scores = zip(*sorted(pr_scores.items(), key=lambda x: x[1], reverse=True))
     plt.bar(node_names[:n_top], pr_scores[:n_top])
-    plt.xticks(rotation=-20)
+    plt.xticks(rotation=0)
     plt.ylabel('PageRank Score')
     plt.savefig(os.path.join(plot_path, 'pr_scores_bar.svg'))
     plt.clf()
@@ -29,7 +29,7 @@ def plot_top_pr_scores(pr_scores, plot_path, n_top=7):
 def plot_graph_heatmap(graph, pr_scores, plot_path):
     """plot graph with heatmap node colors reflecting the computed PageRank scores.
 
-    :param graph: graph represented as a Dask bag of dictionaries mapping nodes to a set of their neighbors
+    :param graph: graph represented as a Dask bag of adjacency lists mapping nodes to a set of their neighbors
     :param pr_scores: dictionary mapping node names to PageRank scores
     :param plot_path: path to folder for plots
     """

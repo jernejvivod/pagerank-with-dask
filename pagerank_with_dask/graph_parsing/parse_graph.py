@@ -15,7 +15,7 @@ def parse_graph_xml(graph_path, graph_spec_format, id_graph=None):
     :param graph_path: path to the file
     :param graph_spec_format: format of the graph representation used in the file
     :param id_graph: if using ORA format, the id of the graph in the xml file
-    :return: Dask Bag instance graph representation containing adjacency dictionaries mapping nodes to a set of their neighbors
+    :return: Dask Bag instance graph representation containing adjacency lists mapping nodes to a set of their neighbors
     """
 
     logger.info('parsing graph with arguments {0}={1}, {2}={3}'.format('graph_spec_format', graph_spec_format, 'id_graph', id_graph))
@@ -46,14 +46,15 @@ def parse_graph_xml(graph_path, graph_spec_format, id_graph=None):
         raise NotImplementedError('specified graph format \'{0}\' not supported'.format(graph_spec_format))
 
 
-def parse_graph_edgelist(graph_path, graph_spec_format):
+def parse_graph_edgelist(graph_path, graph_spec_format, n_partitions=128):
     """Parse graph presented in an edge list format.
 
     Author: Jernej Vivod
 
     :param graph_path: path to the file
     :param graph_spec_format: format of the graph representation used in the file (for preprocessing)
-    :return: Dask Bag instance graph representation containing adjacency dictionaries mapping nodes to a set of their neighbors
+    :param n_partitions: number of partitions to use
+    :return: Dask Bag instance graph representation containing adjacency lists mapping nodes to a set of their neighbors
     """
 
     logger.info('parsing graph with arguments {0}={1}'.format('graph_spec_format', graph_spec_format))
@@ -75,7 +76,7 @@ def parse_graph_edgelist(graph_path, graph_spec_format):
             return acc1
 
         # parse file contents
-        file_cont = db.read_text(graph_path).repartition(npartitions=128)
+        file_cont = db.read_text(graph_path).repartition(npartitions=n_partitions)
 
         # get dictionary mapping node indices to their names
         index_to_name = file_cont.filter(lambda x: re.match('# [0-9]+ "*', x)) \
@@ -92,14 +93,14 @@ def parse_graph_edgelist(graph_path, graph_spec_format):
 
     elif graph_spec_format == 'OF-routes':
         return db.read_text(graph_path) \
-            .repartition(npartitions=128) \
+            .repartition(npartitions=n_partitions) \
             .foldby(key=lambda x: x.split(',')[2],
                     binop=lambda acc, e: (*acc, e.split(',')[4]),
                     combine=lambda acc1, acc2: (*acc1, *acc2),
                     initial=())
 
 
-def parse_graph(graph_path, graph_spec_format=None, id_graph=None):
+def parse_graph(graph_path, graph_spec_format=None, id_graph=None, n_partitions=128):
     """Parse graph from file and return Dask Bag instance representation.
 
     Author: Jernej Vivod
@@ -107,7 +108,8 @@ def parse_graph(graph_path, graph_spec_format=None, id_graph=None):
     :param graph_path: path to file containing the graph representation
     :param graph_spec_format: format used to specify the graph representation
     :param id_graph: if using ORA format, the id of the graph in the xml file
-    :return: Dask Bag instance graph representation containing adjacency dictionaries mapping nodes to a set of their neighbors
+    :param n_partitions: number of partitions to use
+    :return: Dask Bag instance graph representation containing adjacency lists mapping nodes to a set of their neighbors
     """
 
     logger.info('parsing graph from {0} with arguments {1}={2}, {3}={4}'.format(graph_path, 'graph_spec_format', graph_spec_format, 'id_graph', id_graph))
@@ -116,4 +118,4 @@ def parse_graph(graph_path, graph_spec_format=None, id_graph=None):
     if file_extension == '.xml':
         return parse_graph_xml(graph_path, graph_spec_format, id_graph)
     else:
-        return parse_graph_edgelist(graph_path, graph_spec_format)
+        return parse_graph_edgelist(graph_path, graph_spec_format, n_partitions)

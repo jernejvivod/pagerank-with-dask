@@ -9,7 +9,7 @@ from pagerank_with_dask.page_rank import page_rank
 from pagerank_with_dask.visualization import visualize
 
 
-def main(graph_path, graph_spec_format, id_graph, n_iter, initial_pr, damping_factor, n_top_print, plot=False, plot_graph_heatmap=False, n_top=7, plot_path='.'):
+def main(graph_path, graph_spec_format, id_graph, n_iter, damping_factor, n_partitions, n_top_print, plot=False, plot_graph_heatmap=False, n_top=7, plot_path='.'):
     """entry point for the project. Compute and present PageRank scores for a specified graph with specified parameters.
 
     See README.md in the project root directory for more information.
@@ -20,8 +20,8 @@ def main(graph_path, graph_spec_format, id_graph, n_iter, initial_pr, damping_fa
     :param graph_spec_format: format used to specify the graph representation
     :param id_graph: if using ORA format, the id of the graph in the xml file
     :param n_iter: number of iterations of the PageRank algorithm to perform
-    :param initial_pr: initial PageRank score of each node
     :param damping_factor: damping factor value
+    :param n_partitions: number of partitions to use
     :param n_top_print: how many nodes and their PageRank scores to display when printing the results
     :param plot: plot the results or not
     :param plot_graph_heatmap: plot the graph PageRank scores heatmap visualization or not
@@ -30,10 +30,10 @@ def main(graph_path, graph_spec_format, id_graph, n_iter, initial_pr, damping_fa
     """
 
     # parse graph
-    graph = parse_graph.parse_graph(graph_path, graph_spec_format, id_graph)
+    graph = parse_graph.parse_graph(graph_path, graph_spec_format, id_graph=id_graph, n_partitions=n_partitions)
 
     # compute PageRank scores
-    pr_scores = page_rank.pagerank(graph, n_iter, initial_pr=initial_pr, damping_factor=damping_factor)
+    pr_scores = page_rank.pagerank(graph, n_iter, damping_factor=damping_factor, n_partitions=n_partitions)
 
     # print results formatted as a table
     print('Top {0} nodes by their PageRank scores:'.format(min(len(pr_scores), n_top_print)))
@@ -55,12 +55,11 @@ if __name__ == '__main__':
 
     # PageRank parameters
     parser.add_argument('--n-iterations', type=int, default=20, help='number of PageRank algorithm iterations to perform')
-    parser.add_argument('--initial-pr', type=float, default=0.25, help='initial PageRank score of each node')
     parser.add_argument('--damping-factor', type=float, default=0.85, help='damping factor value')
 
     # Dask parameters
     parser.add_argument('--scheduler', type=str, default='multiprocessing', choices=['distributed', 'multiprocessing', 'processes', 'single-threaded', 'sync', 'synchronous', 'threading', 'threads'], help='scheduler for Dask computations')
-    parser.add_argument('--n-partitions', type=int, default=128, help='number of partitions to use')
+    parser.add_argument('--n-partitions', type=int, default=1, help='number of partitions to use')
 
     # visualization
     parser.add_argument('--n-top-print', type=int, default=20, help='how many nodes and their PageRank scores to display when printing the results')
@@ -85,8 +84,8 @@ if __name__ == '__main__':
             graph_spec_format=args.graph_spec_format,
             id_graph=args.id_graph,
             n_iter=args.n_iterations,
-            initial_pr=args.initial_pr,
             damping_factor=args.damping_factor,
+            n_partitions=args.n_partitions,
             n_top_print=args.n_top,
             plot=True,
             plot_graph_heatmap=args.plot_heatmap,
@@ -98,6 +97,6 @@ if __name__ == '__main__':
             graph_spec_format=args.graph_spec_format,
             id_graph=args.id_graph,
             n_iter=args.n_iterations,
-            initial_pr=args.initial_pr,
             damping_factor=args.damping_factor,
+            n_partitions=args.n_partitions,
             n_top_print=args.n_top_print)
