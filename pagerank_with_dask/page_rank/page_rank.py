@@ -1,3 +1,5 @@
+from dask.diagnostics import ProgressBar
+
 from . import logger
 
 
@@ -23,10 +25,13 @@ def pagerank(graph, n_iter=20, initial_pr=0.1, damping_factor=0.85):
 
     ranks = graph.map(lambda x: (x[0], initial_pr))
     for i in range(n_iter):
-        joined = graph.join(ranks, lambda x: x[0]).repartition(npartitions=100)
+        joined = graph.join(ranks, lambda x: x[0]).repartition(npartitions=1)
         ranks = joined.map(lambda x: [(e, x[0][1] / len(x[1][1])) for e in x[1][1]]) \
             .flatten() \
             .foldby(key=lambda x: x[0], binop=lambda acc, e: acc + e[1], combine=lambda acc1, acc2: acc1 + acc2, initial=0) \
             .map(lambda x: (x[0], (1 - damping_factor) / n_nodes + damping_factor * x[1]))
 
-    return dict(ranks.compute())
+    with ProgressBar():
+        res = ranks.compute(scheduler='single-threaded')
+    return dict(res)
+    # return dict(ranks.compute(scheduler='processes'))

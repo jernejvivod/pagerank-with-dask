@@ -37,7 +37,11 @@ def parse_graph_xml(graph_path, graph_spec_format, id_graph=None):
             else:
                 return acc
 
-        return db.from_sequence(network_to_parse).foldby(key=lambda x: x.attrib['source'], binop=foldby_binop, combine=lambda acc1, acc2: (*acc1, *acc2), initial=())
+        return db.from_sequence(network_to_parse) \
+            .foldby(key=lambda x: x.attrib['source'],
+                    binop=foldby_binop,
+                    combine=lambda acc1, acc2: (*acc1, *acc2),
+                    initial=())
     else:
         raise NotImplementedError('specified graph format \'{0}\' not supported'.format(graph_spec_format))
 
@@ -71,7 +75,7 @@ def parse_graph_edgelist(graph_path, graph_spec_format):
             return acc1
 
         # parse file contents
-        file_cont = db.read_text(graph_path)
+        file_cont = db.read_text(graph_path).repartition(npartitions=128)
 
         # get dictionary mapping node indices to their names
         index_to_name = file_cont.filter(lambda x: re.match('# [0-9]+ "*', x)) \
@@ -81,11 +85,18 @@ def parse_graph_edgelist(graph_path, graph_spec_format):
 
         # get graph representation
         return file_cont.filter(lambda x: re.match('[0-9]+ [0-9]+', x)) \
-            .foldby(key=lambda x: index_to_name[x.split(' ')[0]], binop=lambda acc, e: (*acc, index_to_name[e.strip().split(' ')[1]]), combine=lambda acc1, acc2: (*acc1, *acc2), initial=())
+            .foldby(key=lambda x: index_to_name[x.split(' ')[0]],
+                    binop=lambda acc, e: (*acc, index_to_name[e.strip().split(' ')[1]]),
+                    combine=lambda acc1, acc2: (*acc1, *acc2),
+                    initial=())
 
     elif graph_spec_format == 'OF-routes':
         return db.read_text(graph_path) \
-            .foldby(key=lambda x: x.split(',')[2], binop=lambda acc, e: (*acc, e.split(',')[4]), combine=lambda acc1, acc2: (*acc1, *acc2), initial=())
+            .repartition(npartitions=128) \
+            .foldby(key=lambda x: x.split(',')[2],
+                    binop=lambda acc, e: (*acc, e.split(',')[4]),
+                    combine=lambda acc1, acc2: (*acc1, *acc2),
+                    initial=())
 
 
 def parse_graph(graph_path, graph_spec_format=None, id_graph=None):
