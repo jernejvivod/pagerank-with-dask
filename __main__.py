@@ -58,6 +58,10 @@ if __name__ == '__main__':
     parser.add_argument('--initial-pr', type=float, default=0.25, help='initial PageRank score of each node')
     parser.add_argument('--damping-factor', type=float, default=0.85, help='damping factor value')
 
+    # Dask parameters
+    parser.add_argument('--scheduler', type=str, default='multiprocessing', choices=['distributed', 'multiprocessing', 'processes', 'single-threaded', 'sync', 'synchronous', 'threading', 'threads'], help='scheduler for Dask computations')
+    parser.add_argument('--n-partitions', type=int, default=128, help='number of partitions to use')
+
     # visualization
     parser.add_argument('--n-top-print', type=int, default=20, help='how many nodes and their PageRank scores to display when printing the results')
     parser.add_argument('--plot', action='store_true', help='plot the results')
